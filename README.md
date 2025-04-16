@@ -32,6 +32,7 @@ A lightweight Flask-based tool for visually planning and tracking network rack l
    ```
 
 4. Visit [http://localhost:5000](http://localhost:5000) in your browser.
+5. Visit [http://localhost:5000/rackview](http://localhost:5000/rackview) in your browser for a fancy view of the rack.
 
 ## 🗃 Project Layout
 
@@ -50,7 +51,8 @@ This app stores all data in memory while running. Use the **Export** button to s
 
 ## 📸 Screenshots
 
-> *(Add screenshots of index page and rackview here if desired)*
+> ![image](https://github.com/user-attachments/assets/4c80244d-3244-4a84-9919-63530a32deb7)
+
 
 ## 🧑‍💻 Author
 
@@ -59,5 +61,4 @@ Designed for real-world IT field work and sanity.
 
 ---
 
-Want help generating labels, diagrams, or turning this into a standalone desktop tool?  
-File an issue or drop me a message!
+Hack the Gibson and keep the stack noted!
