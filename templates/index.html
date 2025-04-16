@@ -1,0 +1,106 @@
+<!doctype html>
+<title>Network Rack Builder</title>
+{% if error %}<p style="color:red;font-weight:bold">{{ error }}</p>{% endif %}
+<h1>Define Racks</h1>
+<form action="/add_rack" method="post">
+  Rack ID: <input type="text" name="rack_id">
+  Units: <input type="number" name="units">
+  <input type="submit" value="Add Rack">
+</form>
+<ul>
+  {% for rack in racks %}
+    <li>{{ rack.id }} ({{ rack.units }} units)</li>
+  {% endfor %}
+</ul>
+
+<h1>Add Device</h1>
+<form action="/add_device" method="post">
+  Name: <input type="text" name="name">
+  Ports: <input type="number" name="ports">
+  Rack:
+  <select name="rack_id">
+    {% for r in racks %}
+      <option value="{{ r.id }}">{{ r.id }}</option>
+    {% endfor %}
+  </select>
+  Start Unit (U): <input type="number" name="u_position">
+  <input type="submit" value="Add Device">
+</form>
+<ul>
+  {% for device in devices %}
+    <li>{{ device.name }} ({{ device.ports }} ports) - Rack: {{ device.rack_id }}, U{{ device.u_position }}
+      <form action="/delete_device/{{ loop.index0 }}" method="post" style="display:inline;">
+        <button type="submit">Delete</button>
+      </form>
+    </li>
+  {% endfor %}
+</ul>
+
+{% if devices|length > 1 %}
+<h1>Add Connection</h1>
+<form action="/set_selection" method="post">
+  From Device:
+  <select name="src_device">
+    {% for d in devices %}
+      <option value="{{ loop.index0 }}" {% if loop.index0 == src_idx %}selected{% endif %}>{{ d.name }}</option>
+    {% endfor %}
+  </select>
+
+  To Device:
+  <select name="dest_device">
+    {% for d in devices %}
+      <option value="{{ loop.index0 }}" {% if loop.index0 == dst_idx %}selected{% endif %}>{{ d.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Select</button>
+</form>
+
+{% set src_key = devices[src_idx].name.lower().replace(' ', '_') %}
+{% set dst_key = devices[dst_idx].name.lower().replace(' ', '_') %}
+
+<form action="/add_connection" method="post">
+  <input type="hidden" name="src_device" value="{{ src_idx }}">
+  <input type="hidden" name="dest_device" value="{{ dst_idx }}">
+
+  From Port:
+  <select name="src_port">
+    {% for p in available_ports[src_key] %}
+      <option value="{{ p }}">{{ p }}</option>
+    {% endfor %}
+  </select>
+
+  To Port:
+  <select name="dest_port">
+    {% for p in available_ports[dst_key] %}
+      <option value="{{ p }}">{{ p }}</option>
+    {% endfor %}
+  </select>
+  <input type="submit" value="Add Connection">
+</form>
+{% endif %}
+
+<h2>Existing Connections</h2>
+<ul>
+  {% for c in connections %}
+    <li>{{ c.src }} → {{ c.dest }}
+      <form action="/delete_connection/{{ loop.index0 }}" method="post" style="display:inline;">
+        <button type="submit">Delete</button>
+      </form>
+    </li>
+  {% endfor %}
+</ul>
+
+<h2>Rack Notes</h2>
+<form action="/update_notes" method="post">
+  <textarea name="notes" rows="6" cols="80">{{ notes or '' }}</textarea><br>
+  <input type="submit" value="Save Notes">
+</form>
+
+<h2>Import/Export</h2>
+<form action="/import" method="post" enctype="multipart/form-data">
+  <input type="file" name="file">
+  <input type="submit" value="Import JSON">
+</form>
+<form action="/export">
+  <button type="submit">Export JSON</button>
+</form>

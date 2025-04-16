@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+<head>
+  <title>Rack View</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+    }
+    .rack-container {
+      display: flex;
+      gap: 40px;
+      padding: 20px;
+    }
+    .rack {
+      display: flex;
+      flex-direction: column;
+      border: 2px solid #444;
+      padding: 10px;
+      background: #222;
+      width: 200px;
+    }
+    .rack-title {
+      text-align: center;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+    .device {
+      border: 1px solid #555;
+      background: #1a1a1a;
+      margin: 2px 0;
+      padding: 5px;
+    }
+    .device-name {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .ports {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .port {
+      width: 14px;
+      height: 14px;
+      background: #666;
+      border-radius: 2px;
+      border: 1px solid #333;
+    }
+    .port.connected {
+      background: #0f0;
+    }
+    .port.highlighted {
+      background: #ff0;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 5px;
+      text-align: center;
+    }
+    tr.highlighted {
+      background: #333;
+      color: yellow;
+    }
+    .notes {
+      margin: 30px auto;
+      width: 90%;
+      padding: 10px;
+      background: #1c1c1c;
+      border: 1px solid #444;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center">Rack View</h1>
+  <div class="rack-container">
+    {% for rack in racks %}
+      <div class="rack">
+        <div class="rack-title">{{ rack.id }}</div>
+        {% for device in devices|sort(attribute='u_position') if device.rack_id == rack.id %}
+          <div class="device">
+            <div class="device-name">{{ device.name }}</div>
+            <div class="ports">
+              {% for p in range(device.ports) %}
+                <div class="port" id="port-{{ device.name|lower|replace(' ', '_') }}-{{ p }}"
+                     data-device="{{ device.name }}"
+                     data-port="{{ p }}">
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2 style="text-align:center">Connections</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>From Device</th>
+        <th>Port</th>
+        <th>→</th>
+        <th>To Device</th>
+        <th>Port</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in connections %}
+        {% set src_name, src_port = c.src.split(' Port ') %}
+        {% set dst_name, dst_port = c.dest.split(' Port ') %}
+        <tr class="conn-row"
+            data-src="{{ src_name }}" data-src-port="{{ src_port }}"
+            data-dst="{{ dst_name }}" data-dst-port="{{ dst_port }}">
+          <td>{{ src_name }}</td>
+          <td>{{ src_port }}</td>
+          <td>→</td>
+          <td>{{ dst_name }}</td>
+          <td>{{ dst_port }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 style="text-align:center">Notes</h2>
+  <div class="notes">{{ notes or 'No notes yet.' }}</div>
+
+  <script>
+    const connections = {{ connections|tojson }};
+    connections.forEach(c => {
+      const [s, sp] = c.src.split(' Port ');
+      const [d, dp] = c.dest.split(' Port ');
+      const sid = `port-${s.toLowerCase().replace(/\s/g,'_')}-${sp}`;
+      const did = `port-${d.toLowerCase().replace(/\s/g,'_')}-${dp}`;
+      const se = document.getElementById(sid);
+      const de = document.getElementById(did);
+      if (se) se.classList.add("connected");
+      if (de) de.classList.add("connected");
+    });
+
+    document.querySelectorAll(".port.connected").forEach(port => {
+      port.addEventListener("click", () => {
+        document.querySelectorAll(".port").forEach(p => p.classList.remove("highlighted"));
+        document.querySelectorAll(".conn-row").forEach(r => r.classList.remove("highlighted"));
+
+        const dev = port.dataset.device.toLowerCase().replace(/\s/g, '_');
+        const pnum = port.dataset.port;
+
+        port.classList.add("highlighted");
+
+        document.querySelectorAll(".conn-row").forEach(row => {
+          const srcMatch = row.dataset.src.toLowerCase().replace(/\s/g, '_') === dev && row.dataset.srcPort === pnum;
+          const dstMatch = row.dataset.dst.toLowerCase().replace(/\s/g, '_') === dev && row.dataset.dstPort === pnum;
+          if (srcMatch || dstMatch) {
+            row.classList.add("highlighted");
+            const otherId = srcMatch
+              ? `port-${row.dataset.dst.toLowerCase().replace(/\s/g, '_')}-${row.dataset.dstPort}`
+              : `port-${row.dataset.src.toLowerCase().replace(/\s/g, '_')}-${row.dataset.srcPort}`;
+            const otherPort = document.getElementById(otherId);
+            if (otherPort) otherPort.classList.add("highlighted");
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
