@@ -17,8 +17,8 @@ A lightweight Flask-based tool for visually planning and tracking network rack l
 
 1. Clone this repo:
    ```bash
-   git clone https://github.com/your-username/network-rack-tracker.git
-   cd network-rack-tracker
+   git clone https://github.com/james-halpert/rackspace.git
+   cd rackspace
    ```
 
 2. Install dependencies (Python 3.7+ recommended):
