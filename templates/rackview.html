@@ -90,7 +90,7 @@
           <div class="device">
             <div class="device-name">{{ device.name }}</div>
             <div class="ports">
-              {% for p in range(device.ports) %}
+              {% for p in range(device.port_start or 0, (device.port_start or 0) + device.ports) %}
                 <div class="port" id="port-{{ device.name|lower|replace(' ', '_') }}-{{ p }}"
                      data-device="{{ device.name }}"
                      data-port="{{ p }}">

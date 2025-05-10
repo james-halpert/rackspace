@@ -28,13 +28,21 @@ def index():
     for d in devices:
         key = d['name'].lower().replace(' ', '_')
         used_ports[key] = []
-        available_ports[key] = list(range(d['ports']))
+        start = d.get('port_start', 0)
+        available_ports[key] = list(range(start, start + d['ports']))
 
     for c in connections:
-        src_name, src_port = c['src'].split(' Port ')
-        dst_name, dst_port = c['dest'].split(' Port ')
-        used_ports[src_name.lower().replace(' ', '_')].append(int(src_port))
-        used_ports[dst_name.lower().replace(' ', '_')].append(int(dst_port))
+        try:
+            src_name, src_port = c['src'].split(' Port ')
+            dst_name, dst_port = c['dest'].split(' Port ')
+            if src_port.strip().isdigit():
+                used_ports[src_name.lower().replace(' ', '_')].append(int(src_port))
+            if dst_port.strip().isdigit():
+                used_ports[dst_name.lower().replace(' ', '_')].append(int(dst_port))
+        except ValueError:
+            # Log or skip bad connection entries
+            continue
+
 
     for k in used_ports:
         available_ports[k] = [p for p in available_ports[k] if p not in used_ports[k]]
@@ -44,23 +52,27 @@ def index():
 
 @app.route('/add_device', methods=['POST'])
 def add_device():
-    name = request.form['name']
-    ports = int(request.form['ports'])
-    rack_id = request.form['rack_id']
-    u_position = int(request.form['u_position'])
+    name = request.form.get('name', '').strip()
+    rack_id = request.form.get('rack_id', '').strip()
 
-    for d in devices:
-        if d['rack_id'] == rack_id and d['u_position'] == u_position:
-            session['error'] = f"Rack {rack_id} already has a device at U{u_position}."
-            return redirect(url_for('index'))
+    try:
+        ports = int(request.form.get('ports', 0))
+        port_start = int(request.form.get('port_start', 0))
+        u_position = int(request.form.get('u_position', 0))
+    except (ValueError, TypeError) as e:
+        session['error'] = f"Invalid numeric input: {e}"
+        return redirect(url_for('index'))
 
     devices.append({
         'name': name,
         'ports': ports,
+        'port_start': port_start,
         'rack_id': rack_id,
         'u_position': u_position
     })
+
     return redirect(url_for('index'))
+
 
 @app.route('/add_rack', methods=['POST'])
 def add_rack():
@@ -144,4 +156,4 @@ def rackview():
     return render_template('rackview.html', devices=devices, racks=racks, connections=connections, notes=notes)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5213, debug=True)
